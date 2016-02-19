@@ -24,12 +24,15 @@
 
   (module extra-definitions racket/base
     (require multimethod
+             (submod ".." struct-definitions)
              (submod ".." generic-definitions))
     (provide (struct-out bool))
 
     (struct bool (val))
     (define-instance ((add bool bool) a b)
-      (bool (or (bool-val a) (bool-val b)))))
+      (bool (or (bool-val a) (bool-val b))))
+    (define-instance ((add bool num) b n)
+      (bool (or (bool-val b) (not (= (num-val n) 0))))))
   
   (require multimethod
            racket/function
@@ -48,6 +51,10 @@
   (check-equal? (add (bool #t) (bool #f)) (bool #t))
   (check-equal? (add (bool #f) (bool #t)) (bool #t))
   (check-equal? (add (bool #t) (bool #t)) (bool #t))
+
+  (check-equal? (add (bool #f) (num 0)) (bool #f))
+  (check-equal? (add (bool #t) (num 0)) (bool #t))
+  (check-equal? (add (bool #f) (num 1)) (bool #t))
 
   (check-exn #rx"^define-instance: expected name of struct defined in current module$"
              (thunk (convert-syntax-error (define-instance ((add num bool) n b)

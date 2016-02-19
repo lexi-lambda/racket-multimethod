@@ -49,15 +49,15 @@
 (define-syntax define-instance
   (syntax-parser
     ; standard (define (proc ...) ...) shorthand
-    [(_ ((method type:id ...) . args) body:expr ...+)
+    [(_ ((method type:id ...+) . args) body:expr ...+)
      #'(define-instance (method type ...) (λ args body ...))]
     ; full (define proc lambda-expr) notation
-    [(_ (method type:id ...) proc:expr)
+    [(_ (method type:id ...+) proc:expr)
      (let* ([multimethod (syntax-local-value #'method)]
             [privileged? (id-privileged? #'method)])
        ; don’t check struct privilege if the multimethod is itself privileged
-       (unless privileged?
-         (map assert-privileged-struct! (attribute type)))
+       (unless (or privileged? (ormap id-privileged? (attribute type)))
+         (assert-privileged-struct! (first (attribute type))))
        (with-syntax ([dispatch-table (multimethod-dispatch-table multimethod)]
                      [(struct-type-id ...) (map (compose1 first extract-struct-info syntax-local-value)
                                                 (attribute type))])
