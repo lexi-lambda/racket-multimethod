@@ -1,0 +1,32 @@
+language: c
+
+sudo: false
+
+env:
+  global:
+    - RACKET_DIR: '~/racket'
+  matrix:
+    - RACKET_VERSION: 6.0
+    - RACKET_VERSION: 6.0.1
+    - RACKET_VERSION: 6.1
+    - RACKET_VERSION: 6.1.1
+    - RACKET_VERSION: 6.2
+    - RACKET_VERSION: 6.2.1
+    - RACKET_VERSION: 6.3
+    - RACKET_VERSION: 6.4
+    - RACKET_VERSION: HEAD
+
+before_install:
+  - git clone https://github.com/greghendershott/travis-racket.git
+  - cat travis-racket/install-racket.sh | bash
+  - export PATH="${RACKET_DIR}/bin:${PATH}"
+
+install:
+  - raco pkg install --auto --link $TRAVIS_BUILD_DIR/multimethod-lib
+  - raco pkg install --auto --link $TRAVIS_BUILD_DIR/multimethod-doc
+  - raco pkg install --auto --link $TRAVIS_BUILD_DIR/multimethod-test
+  - raco pkg install --auto cover cover-coveralls
+
+script:
+  - raco test -ep multimethod-lib multimethod-test
+  - raco cover -bf coveralls -d $TRAVIS_BUILD_DIR/coverage -p multimethod-lib multimethod-test
