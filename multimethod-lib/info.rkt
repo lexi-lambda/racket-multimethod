@@ -3,6 +3,6 @@
 (define collection 'multi)
 
 (define deps
-  '("base"))
+  '(["base" #:version "6.3"]))
 (define build-deps
   '())
