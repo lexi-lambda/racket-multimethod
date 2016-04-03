@@ -3,6 +3,7 @@
 (define collection 'multi)
 
 (define deps
-  '("base"))
+  '("base"
+    "multimethod-lib"))
 (define build-deps
-  '("rackunit-lib"))
+  '())
