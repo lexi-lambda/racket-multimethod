@@ -15,6 +15,7 @@
          define-generic define-instance)
 
 (begin-for-syntax
+  ; compile-time representation of a multimethod binding
   (struct multimethod (arity dispatch-table)
     #:transparent
     #:property prop:procedure
@@ -29,7 +30,8 @@
   ; for example, consider the definition of “map” — it has a total arity of 2, but dispatch is only
   ; performed on the second argument
   (struct dispatch-arity (total relevant-indicies) #:transparent)
-  
+
+  ; handles parsing multimethod arg lists into expressions that produce dispatch-arity structs
   (define-splicing-syntax-class multimethod-arity-spec
     #:attributes [dispatch-arity-expr]
     [pattern (~seq arg:id ...)
@@ -45,6 +47,7 @@
                           "expected name of struct defined in current module"
                           id))))
 
+; replacement for the struct form that associates privilege information
 (define-syntax privileged-struct
   (syntax-parser
     [(_ name:id fields option ...)
@@ -78,10 +81,12 @@
          #'(let ([struct-types (list struct-type-id ...)])
              (hash-set! dispatch-table struct-types proc))))]))
 
+; wrapper around struct-info that throws away the second value
 (define (struct-type-info s)
   (let-values ([(type complete?) (struct-info s)])
     type))
 
+; application hook for multimethods; expands into do-apply-multimethod
 (define-syntax apply-multimethod
   (syntax-parser
     [(_ method args:expr)
@@ -99,6 +104,7 @@
              #:when (member i indicies))
     x))
 
+; runtime implementation of multimethod dispatch and invocation
 (define (do-apply-multimethod dispatch-table map-args-to-dispatch args)
   (apply (hash-ref dispatch-table (map struct-type-info (map-args-to-dispatch args))) args))
 
