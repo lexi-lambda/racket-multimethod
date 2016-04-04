@@ -16,6 +16,7 @@
 
 (begin-for-syntax
   (struct multimethod (arity dispatch-table)
+    #:transparent
     #:property prop:procedure
     (λ (method stx)
       (syntax-parse stx
@@ -23,6 +24,20 @@
          #'(apply-multimethod method (list arg ...))]
         [method
          #'(λ args (apply-multimethod method args))])))
+  
+  ; each multimethod has a total arity and a set of indicies for which dispatch is actually performed
+  ; for example, consider the definition of “map” — it has a total arity of 2, but dispatch is only
+  ; performed on the second argument
+  (struct dispatch-arity (total relevant-indicies) #:transparent)
+  
+  (define-splicing-syntax-class multimethod-arity-spec
+    #:attributes [dispatch-arity-expr]
+    [pattern (~seq arg:id ...)
+             #:attr dispatch-arity-expr
+             #`(dispatch-arity #,(length (attribute arg))
+                               '#,(for/list ([(id n) (in-indexed (attribute arg))]
+                                             #:unless (free-identifier=? id #'_))
+                                    n))])
 
   (define (assert-privileged-struct! id)
     (unless (id-privileged? id)
@@ -38,13 +53,12 @@
 
 (define-syntax define-generic
   (syntax-parser
-    [(_ (method:id arg:id ...+))
-     (with-syntax ([arity (length (attribute arg))]
-                   [dispatch-table (generate-temporary #'method)])
+    [(_ (method:id arity-spec:multimethod-arity-spec))
+     (with-syntax ([dispatch-table (generate-temporary #'method)])
        (mark-id-as-privileged! #'method)
        #'(begin
            (define dispatch-table (make-hash))
-           (define-syntax method (multimethod arity #'dispatch-table))))]))
+           (define-syntax method (multimethod arity-spec.dispatch-arity-expr #'dispatch-table))))]))
 
 (define-syntax define-instance
   (syntax-parser
@@ -72,8 +86,43 @@
   (syntax-parser
     [(_ method args:expr)
      (let ([multimethod (syntax-local-value #'method)])
-       (with-syntax ([dispatch-table (multimethod-dispatch-table multimethod)])
-         #'(do-apply-multimethod dispatch-table args)))]))
+       (with-syntax ([dispatch-table (multimethod-dispatch-table multimethod)]
+                     [relevant-indicies (dispatch-arity-relevant-indicies
+                                         (multimethod-arity multimethod))])
+         #'(do-apply-multimethod dispatch-table (filter-indicies 'relevant-indicies) args)))]))
 
-(define (do-apply-multimethod dispatch-table args)
-  (apply (hash-ref dispatch-table (map struct-type-info args)) args))
+; Given a list of indicies and a list, returns a list with only the elements at the specified
+; indicies. Used to get the args needed for dispatch from the arity’s relevant-indicies.
+; (listof exact-nonnegative-integer?) -> list? -> list?
+(define ((filter-indicies indicies) lst)
+  (for/list ([(x i) (in-indexed lst)]
+             #:when (member i indicies))
+    x))
+
+(define (do-apply-multimethod dispatch-table map-args-to-dispatch args)
+  (apply (hash-ref dispatch-table (map struct-type-info (map-args-to-dispatch args))) args))
+
+(begin-for-syntax
+  (module+ test
+    (require rackunit
+             rackunit/spec)
+
+    (describe ":multimethod-arity-spec"
+      (it "parses syntax to dispatch-arity structs"
+        (check-equal? (syntax->datum
+                       (syntax-parse #'(a b c d)
+                         [(arity-spec:multimethod-arity-spec)
+                          (attribute arity-spec.dispatch-arity-expr)]))
+                      '(dispatch-arity 4 '(0 1 2 3)))
+        
+        (check-equal? (syntax->datum
+                       (syntax-parse #'(_ f _ _)
+                         [(arity-spec:multimethod-arity-spec)
+                          (attribute arity-spec.dispatch-arity-expr)]))
+                      '(dispatch-arity 4 '(1)))
+        
+        (check-equal? (syntax->datum
+                       (syntax-parse #'(_ a _ b _)
+                         [(arity-spec:multimethod-arity-spec)
+                          (attribute arity-spec.dispatch-arity-expr)]))
+                      '(dispatch-arity 5 '(1 3)))))))
