@@ -2,7 +2,9 @@
 
 @(require racket/require
           (for-label multimethod
-                     (subtract-in racket/base multimethod))
+                     (subtract-in
+                      (multi-in racket [base function])
+                      multimethod))
           scribble/eval)
 
 @(module base-forms racket/base
@@ -31,10 +33,15 @@ permits enhancing implementing structures in more powerful ways, but only suppor
 @section{Example}
 
 @(interaction
-  #:eval ((make-eval-factory '(multimethod)))
-  (struct num (val))
-  (struct vec (vals))
+  #:eval ((make-eval-factory '(multimethod racket/function)))
+  #:escape unsyntax
   
+  (code:comment #,"a scalar value")
+  (struct num (val))
+  (code:comment #,"an n-dimensional vector value")
+  (struct vec (vals))
+
+  (code:comment #,"generic multiplication operator")
   (define-generic (mul a b))
   
   (define-instance ((mul num num) x y)
@@ -44,7 +51,11 @@ permits enhancing implementing structures in more powerful ways, but only suppor
     (vec (map (curry * (num-val n)) (vec-vals v))))
   
   (define-instance ((mul vec num) v n)
-    (mul n v)))
+    (mul n v))
+
+  (mul (num 6) (num 8))
+  (mul (num 2) (vec '(3 12)))
+  (mul (vec '(3 12)) (num 2)))
 
 @section{API Reference}
 
