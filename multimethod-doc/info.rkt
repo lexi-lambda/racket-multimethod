@@ -6,4 +6,5 @@
   '("base"
     "multimethod-lib"))
 (define build-deps
-  '())
+  '("racket-doc"
+    "scribble-lib"))
