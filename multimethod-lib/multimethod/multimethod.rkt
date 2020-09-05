@@ -26,10 +26,10 @@
         [method
          #'(λ args (apply-multimethod method args))])))
   
-  ; each multimethod has a total arity and a set of indicies for which dispatch is actually performed
+  ; each multimethod has a total arity and a set of indices for which dispatch is actually performed
   ; for example, consider the definition of “map” — it has a total arity of 2, but dispatch is only
   ; performed on the second argument
-  (struct dispatch-arity (total relevant-indicies) #:transparent)
+  (struct dispatch-arity (total relevant-indices) #:transparent)
 
   ; handles parsing multimethod arg lists into expressions that produce dispatch-arity structs
   (define-splicing-syntax-class multimethod-arity-spec
@@ -92,16 +92,16 @@
     [(_ method args:expr)
      (let ([multimethod (syntax-local-value #'method)])
        (with-syntax ([dispatch-table (multimethod-dispatch-table multimethod)]
-                     [relevant-indicies (dispatch-arity-relevant-indicies
-                                         (multimethod-arity multimethod))])
-         #'(do-apply-multimethod dispatch-table (filter-indicies 'relevant-indicies) args)))]))
+                     [relevant-indices (dispatch-arity-relevant-indices
+                                        (multimethod-arity multimethod))])
+         #'(do-apply-multimethod dispatch-table (filter-indices 'relevant-indices) args)))]))
 
-; Given a list of indicies and a list, returns a list with only the elements at the specified
-; indicies. Used to get the args needed for dispatch from the arity’s relevant-indicies.
+; Given a list of indices and a list, returns a list with only the elements at the specified
+; indices. Used to get the args needed for dispatch from the arity’s relevant-indices.
 ; (listof exact-nonnegative-integer?) -> list? -> list?
-(define ((filter-indicies indicies) lst)
+(define ((filter-indices indices) lst)
   (for/list ([(x i) (in-indexed lst)]
-             #:when (member i indicies))
+             #:when (member i indices))
     x))
 
 ; runtime implementation of multimethod dispatch and invocation
