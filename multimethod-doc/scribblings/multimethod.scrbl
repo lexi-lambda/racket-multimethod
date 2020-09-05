@@ -30,6 +30,9 @@ Multimethods provide similar but distinct functionality from @racketmodname[rack
 permits enhancing implementing structures in more powerful ways, but only supports
 @emph{single dispatch}.
 
+For more information on the initial design, see
+@hyperlink["https://lexi-lambda.github.io/blog/2016/02/18/simple-safe-multimethods-in-racket/"]{this blog post}.
+
 @section{Example}
 
 @(interaction
