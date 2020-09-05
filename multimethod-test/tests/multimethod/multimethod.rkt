@@ -56,6 +56,6 @@
 (check-equal? (add (bool #t) (num 0)) (bool #t))
 (check-equal? (add (bool #f) (num 1)) (bool #t))
 
-(check-exn #rx"^define-instance: expected name of struct defined in current module$"
+(check-exn #rx"^define-instance: expected name of multimethod or struct defined in current module$"
            (thunk (convert-syntax-error (define-instance ((add num bool) n b)
                                           (bool (or (not (= (num-val n) 0)) (bool-val b)))))))
