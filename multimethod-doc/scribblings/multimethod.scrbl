@@ -3,7 +3,7 @@
 @(require racket/require
           (for-label multimethod
                      (subtract-in
-                      (multi-in racket [base function])
+                      (multi-in racket [base contract/base function])
                       multimethod))
           scribble/eval)
 
@@ -98,3 +98,7 @@ modules, which would cause problems when both loaded at the same time.}
 Like @base:struct from @racketmodname[racket/base], but wrapped to cooperate with the instance
 validity checking of @racket[define-instance]. Additionally, all structs defined with this form are
 @racket[#:transparent]. Otherwise identical to @|base:struct|.}
+
+@defproc[(multimethod? [v any/c]) boolean?]{
+Returns @racket[#t] if @racket[v] is a multimethod, @racket[#f] otherwise.
+}
