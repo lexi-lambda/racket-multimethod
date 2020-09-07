@@ -43,6 +43,9 @@
          'generic-definitions
          'extra-definitions)
 
+(check-true (multimethod? add))
+(check-equal? (format "~a" add) "#<multimethod:add>")
+
 (check-equal? (add (num 1) (num 2)) (num 3))
 (check-equal? (add (num 1) (vec '(1 2 3))) (vec '(2 3 4)))
 (check-equal? (add (vec '(1 2 3)) (num 1)) (vec '(2 3 4)))

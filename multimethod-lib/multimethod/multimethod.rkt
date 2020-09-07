@@ -36,7 +36,7 @@
     (lambda (method stx)
       (let ([descriptor (multimethod-binding-descriptor method)])
         ((make-variable-like-transformer descriptor) stx))))
-  
+
   ; each multimethod has a total arity and a set of indices for which dispatch is actually performed
   ; for example, consider the definition of “map” — it has a total arity of 2, but dispatch is only
   ; performed on the second argument
@@ -128,13 +128,18 @@
                         [(arity-spec:multimethod-arity-spec)
                          (attribute arity-spec.dispatch-arity-expr)])
                       (dispatch-arity 4 '(0 1 2 3)))
-        
+
         (check-equal? (syntax-parse #'(_ f _ _)
                         [(arity-spec:multimethod-arity-spec)
                          (attribute arity-spec.dispatch-arity-expr)])
                       (dispatch-arity 4 '(1)))
-        
+
         (check-equal? (syntax-parse #'(_ a _ b _)
                         [(arity-spec:multimethod-arity-spec)
                          (attribute arity-spec.dispatch-arity-expr)])
-                      (dispatch-arity 5 '(1 3)))))))
+                      (dispatch-arity 5 '(1 3)))
+
+        (check-exn exn:fail:syntax?
+                   (lambda ()
+                     (syntax-parse #'(_ _)
+                       [(arity-spec:multimethod-arity-spec) '()])))))))
