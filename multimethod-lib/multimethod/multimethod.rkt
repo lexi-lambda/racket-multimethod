@@ -44,14 +44,14 @@
 
   ; handles parsing multimethod arg lists into expressions that produce dispatch-arity structs
   (define-splicing-syntax-class multimethod-arity-spec
-    #:attributes [dispatch-arity-expr]
+    #:attributes [dispatch-arity]
     [pattern (~seq arg:id ...+)
-             #:attr dispatch-arity-expr
+             #:attr dispatch-arity
              (dispatch-arity (length (attribute arg))
                              (for/list ([(id n) (in-indexed (attribute arg))]
                                         #:unless (free-identifier=? id #'_))
                                n))
-             #:fail-when (empty? (dispatch-arity-relevant-indices (attribute dispatch-arity-expr)))
+             #:fail-when (empty? (dispatch-arity-relevant-indices (attribute dispatch-arity)))
              "expected at least one dispatch parameter"])
 
   ; wrapper around syntax-local-value with better error messages
@@ -68,7 +68,7 @@
 (define-syntax define-generic
   (syntax-parser
     [(_ (method:id arity-spec:multimethod-arity-spec))
-     (let* ([arity (attribute arity-spec.dispatch-arity-expr)]
+     (let* ([arity (attribute arity-spec.dispatch-arity)]
             [relevant-indices (dispatch-arity-relevant-indices arity)])
        (with-syntax ([descriptor (generate-temporary #'method)]
                      [arity arity]
@@ -82,7 +82,7 @@
   (syntax-parser
     ; standard (define (proc ...) ...) shorthand
     [(_ ((~and signature (method type:id ...+)) . args) body:expr ...+)
-     #'(define-instance signature (λ args body ...))]
+     #'(define-instance signature (lambda args body ...))]
     ; full (define proc lambda-expr) notation
     [(_ (~and signature (method type:id ...+)) proc:expr)
      (let* ([multimethod ((assert-syntax-local-value 'define-instance) #'method)]
@@ -126,20 +126,20 @@
       (it "parses syntax to dispatch-arity structs"
         (check-equal? (syntax-parse #'(a b c d)
                         [(arity-spec:multimethod-arity-spec)
-                         (attribute arity-spec.dispatch-arity-expr)])
+                         (attribute arity-spec.dispatch-arity)])
                       (dispatch-arity 4 '(0 1 2 3)))
 
         (check-equal? (syntax-parse #'(_ f _ _)
                         [(arity-spec:multimethod-arity-spec)
-                         (attribute arity-spec.dispatch-arity-expr)])
+                         (attribute arity-spec.dispatch-arity)])
                       (dispatch-arity 4 '(1)))
 
         (check-equal? (syntax-parse #'(_ a _ b _)
                         [(arity-spec:multimethod-arity-spec)
-                         (attribute arity-spec.dispatch-arity-expr)])
+                         (attribute arity-spec.dispatch-arity)])
                       (dispatch-arity 5 '(1 3)))
 
         (check-exn exn:fail:syntax?
                    (lambda ()
                      (syntax-parse #'(_ _)
-                       [(arity-spec:multimethod-arity-spec) '()])))))))
+                       [(arity-spec:multimethod-arity-spec) #f])))))))
