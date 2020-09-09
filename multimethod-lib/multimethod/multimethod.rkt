@@ -1,16 +1,11 @@
 #lang racket/base
 
 (require racket/contract/base
-         racket/function
-         racket/struct-info
          (for-syntax racket/base
-                     racket/function
                      racket/list
-                     racket/provide-transform
                      racket/struct-info
                      racket/syntax
                      syntax/parse
-                     syntax/transformer
                      "privilege.rkt"))
 
 (provide (rename-out [privileged-struct struct])
@@ -35,7 +30,9 @@
     #:property prop:procedure
     (lambda (method stx)
       (let ([descriptor (multimethod-binding-descriptor method)])
-        ((make-variable-like-transformer descriptor) stx))))
+        (syntax-parse stx
+          [_:id descriptor]
+          [(method:id arg ...) #'((#%expression method) arg ...)]))))
 
   ; each multimethod has a total arity and a set of indices for which dispatch is actually performed
   ; for example, consider the definition of “map” — it has a total arity of 2, but dispatch is only
@@ -69,9 +66,10 @@
   (syntax-parser
     [(_ (method:id arity-spec:multimethod-arity-spec))
      (let* ([arity (attribute arity-spec.dispatch-arity)]
+            [total (dispatch-arity-total arity)]
             [relevant-indices (dispatch-arity-relevant-indices arity)])
        (with-syntax ([descriptor (generate-temporary #'method)]
-                     [arity arity]
+                     [arity #`(dispatch-arity #,total '#,relevant-indices)]
                      [relevant-indices relevant-indices])
          (mark-id-as-privileged! #'method)
          #'(begin
