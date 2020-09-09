@@ -3,7 +3,7 @@
 @(require racket/require
           (for-label multimethod
                      (subtract-in
-                      (multi-in racket [base function])
+                      (multi-in racket [base contract/base function])
                       multimethod))
           scribble/eval)
 
@@ -29,6 +29,9 @@ scalars and vectors.
 Multimethods provide similar but distinct functionality from @racketmodname[racket/generic], which
 permits enhancing implementing structures in more powerful ways, but only supports
 @emph{single dispatch}.
+
+For more information on the initial design, see
+@hyperlink["https://lexi-lambda.github.io/blog/2016/02/18/simple-safe-multimethods-in-racket/"]{this blog post}.
 
 @section{Example}
 
@@ -95,3 +98,7 @@ modules, which would cause problems when both loaded at the same time.}
 Like @base:struct from @racketmodname[racket/base], but wrapped to cooperate with the instance
 validity checking of @racket[define-instance]. Additionally, all structs defined with this form are
 @racket[#:transparent]. Otherwise identical to @|base:struct|.}
+
+@defproc[(multimethod? [v any/c]) boolean?]{
+Returns @racket[#t] if @racket[v] is a multimethod, @racket[#f] otherwise.
+}
